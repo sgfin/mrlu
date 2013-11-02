@@ -7,6 +7,8 @@ filepath <- "/home/samfin/ShinyApps/mrlu/"
 data <- read.csv(paste(filepath, "clinical_data.csv",sep=""))
 pat.drugs <- read.csv(paste(filepath, "pat_drugs.csv", sep=""))
 
+# Function to identify the first "number.treats" drugs used on patient 'MRN'
+# Combines PACLI and Carbo when used together
 extract_drugs <- function(MRN, number.treats) {
   drug.list <- pat.drugs$NAME[which(pat.drugs$MRN == MRN)]
   drug.list <- as.character(drug.list)
@@ -18,6 +20,7 @@ extract_drugs <- function(MRN, number.treats) {
   drug.list <- paste(drug.list[1:min(number.treats,length(drug.list))], collapse=", ")
 }
 
+# Identifies the first drug class used on patient 'MRN'
 extract_drug_class <- function(MRN) {
   d_class <- as.character(pat.drugs$DRUG_CLASS[which(pat.drugs$MRN == MRN)])
   d_class <- d_class[!is.na(d_class)]
@@ -28,79 +31,60 @@ MEDICATION <- sapply(data$MRN, extract_drugs, 1)
 DRUG_CLASS <- sapply(data$MRN, extract_drug_class) # REPLACE WITH SOME MAP
 TUMOR_CHANGE <- runif(length(data$MRN),-1,1)
 
+# Finalizes Data
 data <- cbind(data, MEDICATION, DRUG_CLASS, TUMOR_CHANGE)
 
 
 shinyServer(function(input, output) {
     
-#   output$inputPat <- renderUI({
-#     textInput("POI.ID", "Enter Patient ID:", value="MR0375" )
-#   })
-  
+# Renders UI for Sex Filter
   output$selectSex <- renderUI({
-# #     if(input$specifyPat == 'import'){
-# #       return(selectInput("sex", "Sex:",
-# #                          list("MALE" = "MALE", 
-# #                               "FEMALE" = "FEMALE"),
-# #                          selected = as.character(ehr.data[input$POI.ID,]$sex)))
-# #     }
-# #     else{
-      selectInput("sex", "Sex:",
-                  list("MALE" = "MALE", 
-                       "FEMALE" = "FEMALE"))
-# #     }
+    selectInput("sex", "Sex:",
+                list("MALE" = "MALE", 
+                     "FEMALE" = "FEMALE"))
   })
-#   
+
+# Renders UI for Race Filter
   output$selectRace <- renderUI({
-# #     if(input$specifyPat == 'import') {
-# #       return(selectInput("race", "Race:",
-# #                          list("White" = 'WHITE', 
-# #                               "Black or African American" = "BLACK OR AFRICAN AMERICAN",
-# #                               "Asian" = "ASIAN"),
-# #                          selected = as.character(ehr.data[input$POI.ID,]$race)))
-# #     }
     selectInput("race", "Race:",
                 list("White" = 'WHITE', 
                      "Black or African American" = "BLACK OR AFRICAN AMERICAN",
                      "Asian" = "ASIAN"
                 ))
   })
-#   
+
+# Renders UI for Age Filter
   output$selectAge <- renderUI({
-# #     if(input$specifyPat == 'import'){
-# #       return(numericInput("POI.age", "Patient Age:", as.numeric(ehr.data[input$POI.ID,]$age)))
-# #     }
     numericInput("POI.age", "Patient Age:", median(data$AGE))
   })
   
+  # Creates Slider for Selecting Age Ranges
+  output$age_range_slider <- renderUI({
+    age.min <- min(data$AGE)
+    age.max <- max(data$AGE)
+    
+    sliderInput(inputId = "age_range",
+                label = paste("Age range"),
+                min = age.min, max = age.max,
+                value= c(max(age.min, input$POI.age - 15), min(age.max, input$POI.age + 15))
+    )
+  })
+  
+# Renders UI for BRAF Filter
   output$selectBRAF <- renderUI({
-# #     if(input$sp == 'import'){
-# #       return(selectInput("braf_status", "BRAF STATUS:",
-# #                          list("POSITIVE" = "POSITIVE", 
-# #                               "NEGATIVE" = "NEGATIVE"),
-# #                          selected = as.character(ehr.data[input$POI.ID,]$sex)))
-# #     }
-# #     else{
     selectInput("braf", "BRAF Test Result:",
                 list("POSITIVE" = "1", 
                      "NEGATIVE" = "0"))
-# #    }
   })
-  
+
+# Renders UI for NRAS Filter
   output$selectNRAS <- renderUI({
-# #     if(input$specifyPat == 'import'){
-# #       return(selectInput("sex", "Sex:",
-# #                          list("MALE" = "MALE", 
-# #                               "FEMALE" = "FEMALE"),
-# #                          selected = as.character(ehr.data[input$POI.ID,]$sex)))
-# #     }
-# #     else{
       selectInput("nras", "NRAS Test Result:",
                   list("POSITIVE" = "1", 
                        "NEGATIVE" = "0"))
-# #     }
   })
   
+# Renders UI For Drug Name Filter  
   output$drug_names <- renderUI({   
     if(input$selectAllNoneDrugs == 'none') {
       return(checkboxGroupInput("drug_name", "Include:", sort(unique(data$MEDICATION))))
@@ -113,21 +97,9 @@ shinyServer(function(input, output) {
     checkboxGroupInput("drug_name", "Include:", sort(unique(data$MEDICATION)), sort(unique(data$MEDICATION)))
   })
   
+# Renders UI For Drug Class Filter  
   output$drug_classes <- renderUI({   
     checkboxGroupInput("drug_class", "Include:", sort(unique(data$DRUG_CLASS)), sort(unique(data$DRUG_CLASS)))
-  })
-  
-  
-  # Creates Slider for Selecting Age Ranges
-  output$age_range_slider <- renderUI({
-    age.min <- min(data$AGE)
-    age.max <- max(data$AGE)
-    
-    sliderInput(inputId = "age_range",
-                label = paste("Age range"),
-                min = age.min, max = age.max,
-                value= c(max(age.min, input$POI.age - 15), min(age.max, input$POI.age + 15))
-    )
   })
   
 #  Function to Narrow Down Dataset According to UI inputs
@@ -160,7 +132,7 @@ shinyServer(function(input, output) {
     plot.data
   }
   
-  # Build Cox Model
+  # Build Cox Model, Including Right-Censoring for those patients alive at end of study
   coxModel <- function(plot.data, groupBy){
     switch(groupBy,
            MEDICATION = coxph(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ 1 + strata(MEDICATION), data=plot.data),
@@ -172,6 +144,7 @@ shinyServer(function(input, output) {
     )
   }
 
+  # Calculates desired height of plot
   plotHeight <- function(){
     plot.data <- selectPats(data)
     distinct = unique(plot.data[,input$groupBy])
@@ -266,6 +239,7 @@ shinyServer(function(input, output) {
     
   },height=700)
   
+  # Renders boxlplot for time to next treatment
   output$boxResponseMed <- renderPlot({
     plot.data <- selectPats(data)
     plot.data$MEDICATION <- factor(plot.data$MEDICATION)
@@ -300,23 +274,25 @@ shinyServer(function(input, output) {
 
   },height=500)
   
-  output$cohortAges <- renderPlot({
+  # Displays Age and Sex Distributions of Patients in Cohort
+  output$cohortAgeSex <- renderPlot({
     plot.data <- selectPats(data)
     layout(matrix(c(1,2),1,2,byrow=T),widths=c(1,2))
     barplot(table(plot.data$SEX), main = "Cohort Sex Distribution")
     hist(plot.data$AGE, main="Cohort Age Distribution", xlab="Age (Years)", ylab="# Patients",col='grey')
   }, height = 250)
   
-  output$cohortSexGen <- renderPlot({
+  # Displays Mutation Distributions of Patients in Cohort
+  output$cohortGen <- renderPlot({
     plot.data <- selectPats(data)
     par(mfrow=c(1,2))
-    #barplot(table(plot.data$SEX), main = "Cohort Sex Distribution")
     barplot(table(plot.data$MUTATION), main="Cohort Positive Mutation Results Distribution")
     barplot(table(plot.data$DRUG_CLASS), main="Cohort Treatment Drug Class Distribution",
             names = c("CHEMO.","IMMUNO.","KINASE INH.","ANTIBODY"))
     
   }, height = 250)
   
+  # Displays Drugs Used on Patients in Cohort
   output$cohortDrugs <- renderPlot({
     plot.data <- selectPats(data)
    # par(mar=c(5,4,2,2),mgp = c(1, .5, 0))
@@ -324,6 +300,7 @@ shinyServer(function(input, output) {
     barplot(table(plot.data$MEDICATION), main="Cohort Drug Distribution",las=3)                              
   }, height = 400)  
   
+  # Deidentifies Stanford Pats
   deidentifyStan <- function(MRNS){
     MRNS_deidentified <- MRNS
     MRNS_list <- unique(MRNS)
@@ -333,6 +310,7 @@ shinyServer(function(input, output) {
     MRNS_deidentified
   }
   
+  # Creates Table of Clinical Data for Display/Download
   output$cohortTableClinical <- renderDataTable({
     plot.data <- selectPats(data)[,c("MRN","SEX","AGE","MUTATION", "MEDICATION",
                                      "DRUG_CLASS", "DAYS_TO_NEXT_RX",
@@ -349,7 +327,7 @@ shinyServer(function(input, output) {
     plot.data
   },options=list(iDisplayLength = 25))  
   
-  
+  # Creates Table of Drug Data for Display/Download
   output$cohortTableDrugs <- renderDataTable({
     plot.data <- selectPats(data)
     MRNS <- unique(plot.data$MRN)
@@ -360,6 +338,7 @@ shinyServer(function(input, output) {
     data
   },options=list(iDisplayLength = 25))  
   
+  # Dowload Handler for Clinical Data
   output$downloadDataClinical <- downloadHandler(
     filename = function() { paste("mrlu_patient_cohort_clinical", '.csv', sep='') },
     content = function(file) {
@@ -380,6 +359,7 @@ shinyServer(function(input, output) {
     }
   )
   
+  # Dowload Handler for Drug Data
   output$downloadDataDrug <- downloadHandler(
     filename = function() { paste("mrlu_patient_cohort_drugs", '.csv', sep='') },
     content = function(file) {

@@ -99,8 +99,8 @@ shinyUI(pageWithSidebar(
     
      tabsetPanel(
        tabPanel("Cohort Summary"
-                 ,plotOutput("cohortAges", height="auto")
-                 ,plotOutput("cohortSexGen", height="auto")
+                 ,plotOutput("cohortAgeSex", height="auto")
+                 ,plotOutput("cohortGen", height="auto")
                  ,plotOutput("cohortDrugs", height="auto")),
        tabPanel("Outcomes",
                 plotOutput("survCurv")
