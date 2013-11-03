@@ -300,26 +300,12 @@ shinyServer(function(input, output) {
     barplot(table(plot.data$MEDICATION), main="Cohort Drug Distribution",las=3)                              
   }, height = 400)  
   
-  # Deidentifies Stanford Pats
-  deidentifyStan <- function(MRNS){
-    MRNS_deidentified <- MRNS
-    MRNS_list <- unique(MRNS)
-    for(i in 1:length(MRNS_list)){
-      MRNS_deidentified[which(MRNS_deidentified==MRNS_list[i])] <- paste("STAN",i)
-    }
-    MRNS_deidentified
-  }
-  
   # Creates Table of Clinical Data for Display/Download
   output$cohortTableClinical <- renderDataTable({
     plot.data <- selectPats(data)[,c("MRN","SEX","AGE","MUTATION", "MEDICATION",
                                      "DRUG_CLASS", "DAYS_TO_NEXT_RX",
                                      "DAYS_TO_DEATH","R.CENSORED","TUMOR_CHANGE",
                                      "SOURCE")]
-    stanford.inds <- which(plot.data$SOURCE == "STANFORD")
-    plot.data$MRN[stanford.inds] <- deidentifyStan(plot.data$MRN[stanford.inds])
-    vand.inds <- which(plot.data$SOURCE == "VANDERBILT")
-    plot.data$MRN[vand.inds] <- paste("VAND", plot.data$MRN[vand.inds])
     colnames(plot.data)<- c("MRN","SEX","AGE","MUTATION", "MEDICATION",
                             "DRUG_CLASS", "DAYS TO 2ND TREATMENT",
                             "DAYS TO DEATH","ALIVE AT END OF STUDY","TUMOR CHANGE",
@@ -332,9 +318,6 @@ shinyServer(function(input, output) {
     plot.data <- selectPats(data)
     MRNS <- unique(plot.data$MRN)
     data <- pat.drugs[which(pat.drugs$MRN %in% MRNS),]
-    stanford.inds <- which(data$INSTITUTION != "VANDERBILT")
-    data$MRN[stanford.inds] <- deidentifyStan(data$MRN[stanford.inds])
-    data$MRN[which(data$INSTITUTION == "VANDERBILT")] <- paste("VAND", data$MRN[which(data$INSTITUTION == "VANDERBILT")])    
     data
   },options=list(iDisplayLength = 25))  
   
@@ -346,10 +329,6 @@ shinyServer(function(input, output) {
                                        "DRUG_CLASS", "DAYS_TO_NEXT_RX",
                                        "DAYS_TO_DEATH","R.CENSORED","TUMOR_CHANGE",
                                        "SOURCE")]
-      stanford.inds <- which(plot.data$SOURCE == "STANFORD")
-      plot.data$MRN[stanford.inds] <- deidentifyStan(plot.data$MRN[stanford.inds])
-      vand.inds <- which(plot.data$SOURCE == "VANDERBILT")
-      plot.data$MRN[vand.inds] <- paste("VAND", plot.data$MRN[vand.inds])
       colnames(plot.data)<- c("MRN","SEX","AGE","MUTATION", "MEDICATION",
                               "DRUG_CLASS", "DAYS TO 2ND TREATMENT",
                               "DAYS TO DEATH","ALIVE AT END OF STUDY","TUMOR CHANGE",
@@ -366,9 +345,6 @@ shinyServer(function(input, output) {
       plot.data <- selectPats(data)
       MRNS <- unique(plot.data$MRN)
       data <- pat.drugs[which(pat.drugs$MRN %in% MRNS),]
-      stanford.inds <- which(data$SOURCE == "STANFORD")
-      data$MRN[stanford.inds] <- deidentifyStan(data$MRN[stanford.inds])
-      data$MRN[which(data$SOURCE == "VANDERBILT")] <- paste("VAND", data$MRN[which(plot.data$SOURCE == "VANDERBILT")])
       write.csv(data, file)
     }
   )
