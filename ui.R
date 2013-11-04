@@ -102,11 +102,16 @@ shinyUI(pageWithSidebar(
                  ,plotOutput("cohortAgeSex", height="auto")
                  ,plotOutput("cohortGen", height="auto")
                  ,plotOutput("cohortDrugs", height="auto")),
-       tabPanel("Outcomes",
-                plotOutput("survCurv")
-                ,br(),br(),br(),br(),br()
+       tabPanel("Outcomes"
                 ,tabsetPanel(
-                  tabPanel("Time to Next Treatment",
+                  tabPanel("Kaplan Meier",
+                           plotOutput("survCurv", height="auto")
+                           ,h5("Model Summary")
+                           ,verbatimTextOutput("survSummary")
+                           #,h5("Differences Statistics")
+                           #,verbatimTextOutput("survDiffSummary")
+                           )
+                  ,tabPanel("Time to Next Treatment",
                             conditionalPanel(
                               condition = "input.groupBy == 'MEDICATION'",
                               HTML("<center>"),
@@ -119,8 +124,9 @@ shinyUI(pageWithSidebar(
                              plotOutput("boxResponse", height="auto",width="60%"),
                              HTML("</center>")
                            )
-                           ),
-                  tabPanel("Tumor Response", plotOutput("barResponse", height="auto"))
+                          ,verbatimTextOutput("boxSummary")
+                           )
+                  ,tabPanel("Tumor Response", plotOutput("barResponse", height="auto"))
                 )
                 ),
        tabPanel("Raw Data (Cohort Specific)",

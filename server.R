@@ -181,6 +181,7 @@ shinyServer(function(input, output) {
   # Generates Box Plot  
   output$boxResponse <- renderPlot({
     plot.data <- selectPats(data)
+    plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
@@ -242,6 +243,7 @@ shinyServer(function(input, output) {
   # Renders boxlplot for time to next treatment
   output$boxResponseMed <- renderPlot({
     plot.data <- selectPats(data)
+    plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
     plot.data$MEDICATION <- factor(plot.data$MEDICATION)
     name.list <- sort(unique(factor(plot.data[,input$groupBy])))
     name.list <- paste(name.list,' (', table(plot.data[,input$groupBy]), ')',sep='')
@@ -251,6 +253,15 @@ shinyServer(function(input, output) {
             ylab = "Days",
             xlab="Drug Name")
     },height=900)
+  
+  
+  output$boxSummary <- renderPrint({  
+    plot.data <- selectPats(data)
+    plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
+    plot.data[,input$groupBy] <- factor(plot.data[,input$groupBy])
+    
+    tapply(plot.data$DAYS_TO_NEXT_RX, plot.data[,input$groupBy], summary)
+  })
   
   # Generates Survival Plot  
   output$survCurv <- renderPlot({
@@ -273,6 +284,38 @@ shinyServer(function(input, output) {
                inset=c(0,0))
 
   },height=500)
+  
+  output$survSummary <- renderPrint({  
+    plot.data <- selectPats(data)
+    if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+    }
+    
+    ml.surv <- coxModel(plot.data, input$groupBy)
+    mfit <- survfit(ml.surv)
+    list(ml.surv, mfit)
+  })
+  
+#  THIS IS NOT CORRECT, BUT IS IN THE SPIRIT OF CORRECT SYNTAX.  NEED TO CHECK WITH A PRO.  
+#   output$survDiffSummary <- renderPrint({
+#     plot.data <- selectPats(data)
+#     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+#       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+#       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+#     }
+# 
+#     diff_output <- switch(input$groupBy,
+#                           MEDICATION = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ MEDICATION, data=plot.data),
+#                           DRUG_CLASS = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ DRUG_CLASS, data=plot.data),
+#                           SEX = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ SEX, data=plot.data),
+#                           BRAF = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ BRAF, data=plot.data),
+#                           MUTATION = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ MUTATION, data=plot.data),
+#                           NRAS = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ NRAS, data=plot.data)
+#     )
+#      diff_output  
+#   })
+
   
   # Displays Age and Sex Distributions of Patients in Cohort
   output$cohortAgeSex <- renderPlot({
