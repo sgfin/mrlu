@@ -10,30 +10,33 @@ pat.drugs <- read.csv(paste(filepath, "pat_drugs.csv", sep=""))
 # Function to identify the first "number.treats" drugs used on patient 'MRN'
 # Combines PACLI and Carbo when used together
 extract_drugs <- function(MRN, number.treats) {
-  drug.list <- pat.drugs$NAME[which(pat.drugs$MRN == MRN)]
-  drug.list <- as.character(drug.list)
-  
+  drug.list <- pat.drugs[which(pat.drugs$MRN == MRN), c("NAME", "ORDERING_DATE")]
   if("PACLITAXEL" %in% drug.list && "CARBOPLATIN" %in% drug.list){
-    drug.list <- gsub("PACLITAXEL", "PACL/CARBO", x=drug.list)
-    drug.list <- gsub("CARBOPLATIN", "PACL/CARBO",x=drug.list)
+    drug.list <- gsub("PACLITAXEL", "PACL/CARBO", x=drug.list[,"NAME"])
+    drug.list <- gsub("CARBOPLATIN", "PACL/CARBO",x=drug.list[,"NAME"])
   }
+  
+  drug.list <- drug.list[which(!duplicated(drug.list[,"ORDERING_DATE"])) ,"NAME"]
   drug.list <- paste(drug.list[1:min(number.treats,length(drug.list))], collapse=", ")
+  return(drug.list)
 }
 
 # Identifies the first drug class used on patient 'MRN'
-extract_drug_class <- function(MRN) {
-  d_class <- as.character(pat.drugs$DRUG_CLASS[which(pat.drugs$MRN == MRN)])
-  d_class <- d_class[!is.na(d_class)]
-  return(d_class[1])
+extract_drug_class <- function(MRN, number.treats) {
+  d_class <- pat.drugs[which(pat.drugs$MRN == MRN), c("DRUG_CLASS", "ORDERING_DATE")]
+  d_class <- as.character(d_class[which(!duplicated(d_class[,"ORDERING_DATE"])) ,"DRUG_CLASS"])
+  return(paste( d_class[1:min(number.treats,length(d_class))] , collapse=", "))
 }
 
 MEDICATION <- sapply(data$MRN, extract_drugs, 1)
-DRUG_CLASS <- sapply(data$MRN, extract_drug_class) # REPLACE WITH SOME MAP
+DRUG_CLASS <- sapply(data$MRN, extract_drug_class, 1) # REPLACE WITH SOME MAP
+DRUG_CLASS_TWO <- sapply(data$MRN, extract_drug_class, 2) # REPLACE WITH SOME MAP
 TUMOR_CHANGE <- runif(length(data$MRN),-1,1)
 
 # Finalizes Data
 data <- cbind(data, MEDICATION, DRUG_CLASS, TUMOR_CHANGE)
-
+data2 <- data
+data2$DRUG_CLASS <- DRUG_CLASS_TWO
 
 shinyServer(function(input, output) {
     
@@ -98,14 +101,33 @@ shinyServer(function(input, output) {
   })
   
 # Renders UI For Drug Class Filter  
-  output$drug_classes <- renderUI({   
-    checkboxGroupInput("drug_class", "Include:", sort(unique(data$DRUG_CLASS)), sort(unique(data$DRUG_CLASS)))
+  output$drug_classes <- renderUI({
+    if(input$selectAllNoneClasses == 'none') {
+      if(input$twoClass){
+        return(checkboxGroupInput("drug_class", "Include:", sort(unique(data2$DRUG_CLASS))))
+      }
+      else{
+        return(checkboxGroupInput("drug_class", "Include:", sort(unique(data$DRUG_CLASS))))
+      }
+          }
+    else {
+      if(input$twoClass){
+        return(checkboxGroupInput("drug_class", "Include:", sort(unique(data2$DRUG_CLASS)), sort(unique(data2$DRUG_CLASS))))
+      }
+      else{
+        return(checkboxGroupInput("drug_class", "Include:", sort(unique(data$DRUG_CLASS)), sort(unique(data$DRUG_CLASS))))
+      }
+    }
   })
   
 #  Function to Narrow Down Dataset According to UI inputs
-  selectPats <- function(data, subgroups = TRUE){
-    plot.data <- data
-    
+  selectPats <- function(data, subgroups = TRUE, two_class = FALSE){
+    if(two_class){
+      plot.data <- data2
+    }
+    else{
+      plot.data <- data
+    }
     #EXCLUDE SURVIVORS
     if(input$includeSource){
       plot.data <- subset(plot.data, SOURCE==input$selectSource, drop=T)
@@ -146,7 +168,7 @@ shinyServer(function(input, output) {
 
   # Calculates desired height of plot
   plotHeight <- function(){
-    plot.data <- selectPats(data)
+    plot.data <- selectPats(data, two_class = input$twoClass)
     distinct = unique(plot.data[,input$groupBy])
     return(length(distinct)*200+100)
   }
@@ -154,7 +176,7 @@ shinyServer(function(input, output) {
   nDistinct <-3
   # Generates Survival Plot  
   output$barResponse <- renderPlot({
-    plot.data <- selectPats(data)
+    plot.data <- selectPats(data, two_class = input$twoClass)
     plot.data <- subset(plot.data, !is.na(plot.data[,input$groupBy]))
     
     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
@@ -180,7 +202,7 @@ shinyServer(function(input, output) {
 
   # Generates Box Plot  
   output$boxResponse <- renderPlot({
-    plot.data <- selectPats(data)
+    plot.data <- selectPats(data, two_class = input$twoClass)
     plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
@@ -242,7 +264,7 @@ shinyServer(function(input, output) {
   
   # Renders boxlplot for time to next treatment
   output$boxResponseMed <- renderPlot({
-    plot.data <- selectPats(data)
+    plot.data <- selectPats(data, two_class = input$twoClass)
     plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
     plot.data$MEDICATION <- factor(plot.data$MEDICATION)
     name.list <- sort(unique(factor(plot.data[,input$groupBy])))
@@ -256,7 +278,7 @@ shinyServer(function(input, output) {
   
   
   output$boxSummary <- renderPrint({  
-    plot.data <- selectPats(data)
+    plot.data <- selectPats(data, two_class = input$twoClass)
     plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
     plot.data[,input$groupBy] <- factor(plot.data[,input$groupBy])
     
@@ -265,7 +287,7 @@ shinyServer(function(input, output) {
   
   # Generates Survival Plot  
   output$survCurv <- renderPlot({
-    plot.data <- selectPats(data)
+    plot.data <- selectPats(data, two_class = input$twoClass)
     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
@@ -286,7 +308,7 @@ shinyServer(function(input, output) {
   },height=500)
   
   output$survSummary <- renderPrint({  
-    plot.data <- selectPats(data)
+    plot.data <- selectPats(data, two_class = input$twoClass)
     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
