@@ -1,11 +1,12 @@
 
 require('survival')
 
-#filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
-filepath <- "/home/samfin/ShinyApps/mrlu/"
+filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
+#filepath <- "/home/samfin/ShinyApps/mrlu/"
 
 data <- read.csv(paste(filepath, "clinical_data.csv",sep=""))
 pat.drugs <- read.csv(paste(filepath, "pat_drugs.csv", sep=""))
+pat.drugs.full <- read.csv(paste(filepath, "drug_data_full.csv", sep=""))
 
 # Function to identify the first "number.treats" drugs used on patient 'MRN'
 # Combines PACLI and Carbo when used together
@@ -384,12 +385,20 @@ shinyServer(function(input, output) {
   },options=list(iDisplayLength = 25))  
   
   # Creates Table of Drug Data for Display/Download
+  output$cohortTableDrugsFull <- renderDataTable({
+    plot.data <- selectPats(data)
+    MRNS <- unique(plot.data$MRN)
+    data <- pat.drugs.full[which(pat.drugs.full$MRN %in% MRNS),]
+    data
+  },options=list(iDisplayLength = 25))  
+  
+  # Creates Table of Drug Data for Display/Download
   output$cohortTableDrugs <- renderDataTable({
     plot.data <- selectPats(data)
     MRNS <- unique(plot.data$MRN)
     data <- pat.drugs[which(pat.drugs$MRN %in% MRNS),]
     data
-  },options=list(iDisplayLength = 25))  
+  },options=list(iDisplayLength = 25))
   
   # Dowload Handler for Clinical Data
   output$downloadDataClinical <- downloadHandler(

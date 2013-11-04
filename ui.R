@@ -157,11 +157,17 @@ shinyUI(pageWithSidebar(
                            downloadButton("downloadDataClinical","Download as .csv"), br(),br(),
                            dataTableOutput("cohortTableClinical")
                            ),
-                  tabPanel("Drugs",helpText('All MRNS are de-identified, and all dates are shifted.
+                  tabPanel("Drugs (Distinct)",helpText('All MRNS are de-identified, and all dates are shifted.
                                             Lists includes only the first date in which each distinct cancer drug was used
                                             on each patient.'),
                            downloadButton("downloadDataDrug","Download as .csv"), br(),br(),
                            dataTableOutput("cohortTableDrugs") 
+                ),
+                  tabPanel("Drugs (Full Data)",helpText('All MRNS are de-identified, and all dates are shifted.
+                                            Lists includes only the first date in which each distinct cancer drug was used
+                                            on each patient.'),
+                           dataTableOutput("cohortTableDrugsFull") 
+                  
                 )
      )
     )
