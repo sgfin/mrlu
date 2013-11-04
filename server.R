@@ -151,6 +151,11 @@ shinyServer(function(input, output) {
     if(input$includeDrug){
       plot.data <- subset(plot.data, MEDICATION %in% input$drug_name, drop=T)
     }
+    if(input$includeMinGroupSize){
+      group.sizes <- table(factor(plot.data[,input$groupBy]))
+      big.groups <- names(group.sizes)[which(group.sizes > input$minGroupSize)]
+      plot.data <- subset(plot.data, plot.data[,input$groupBy] %in% big.groups)
+    }
     plot.data
   }
   

@@ -23,16 +23,22 @@ shinyUI(pageWithSidebar(
                      "NRAS Status" = "NRAS",
                      "Sex" = "SEX"
                 ))    
-    ,br()
+    ,br() ,br()
+    # Minimum Patients
+    ,checkboxInput("includeMinGroupSize", "Minimum Patients Per Outcome Group", FALSE),
+      conditionalPanel(
+        condition = "input.includeMinGroupSize == true",
+        numericInput("minGroupSize", "Require n >=", 5)
+      )
     # INSTITUTION
     ,checkboxInput("includeSource", "Filter By Institution of Origin", FALSE),
-      conditionalPanel(
-        condition = "input.includeSource == true",
-        selectInput("selectSource", "Include Patients From:",
-                    list("Stanford" = "STANFORD",
-                    "Vanderbilt" = "VANDERBILT"))
-      )
-    
+    conditionalPanel(
+      condition = "input.includeSource == true",
+      selectInput("selectSource", "Include Patients From:",
+                  list("Stanford" = "STANFORD",
+                       "Vanderbilt" = "VANDERBILT"))
+    )
+
     # SEX
     ,conditionalPanel(
       condition = "input.groupBy != 'SEX'",
@@ -75,7 +81,6 @@ shinyUI(pageWithSidebar(
     ),
     
     # Filter Drug Class
-
     checkboxInput("includeClasses", "Filter By Drug Class", FALSE),
     conditionalPanel(
       checkboxInput("twoClass", "Compare First Two Treatments", FALSE),
