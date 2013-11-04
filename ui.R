@@ -23,6 +23,7 @@ shinyUI(pageWithSidebar(
                      "NRAS Status" = "NRAS",
                      "Sex" = "SEX"
                 ))    
+    ,br(),br()
     # Minimum Patients
     ,checkboxInput("includeMinGroupSize", "Minimum Patients Per Outcome Group", FALSE),
       conditionalPanel(
