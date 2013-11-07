@@ -28,7 +28,7 @@ shinyUI(pageWithSidebar(
     ,checkboxInput("includeMinGroupSize", "Minimum Patients Per Outcome Group", FALSE),
       conditionalPanel(
         condition = "input.includeMinGroupSize == true",
-        numericInput("minGroupSize", "Require n >=", 5)
+        numericInput("minGroupSize", "Require n >=", 12)
       )
     # INSTITUTION
     ,checkboxInput("includeSource", "Filter By Institution of Origin", FALSE),
