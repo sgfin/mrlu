@@ -1,4 +1,3 @@
-
 require('survival')
 
 #filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
@@ -325,7 +324,7 @@ shinyServer(function(input, output) {
     list(ml.surv, mfit)
   })
   
-#  THIS IS NOT CORRECT, BUT IS IN THE SPIRIT OF CORRECT SYNTAX.  NEED TO CHECK WITH A PRO.  
+#  THIS CODE IS NOT YET TO BE DEPLOYED.  ONLY EXPLORING SURVDIFF FUNCTION.  
 #   output$survDiffSummary <- renderPrint({
 #     plot.data <- selectPats(data)
 #     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
