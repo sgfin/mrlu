@@ -86,18 +86,20 @@ shinyUI(pageWithSidebar(
       checkboxInput("twoClass", "Compare First Two Treatments", FALSE),
       condition = "input.includeClasses == true",
       uiOutput("drug_classes")
-      ,conditionalPanel(
-      condition = "input.twoClass == true"
+#       ,conditionalPanel(
+#       condition = "input.twoClass == true"
       ,radioButtons("selectAllNoneClasses", "Quick Check/Uncheck All Classes: ",
                    list("Check All" = 'all', 
                         "Uncheck All" = "none"
-                   ))
+                   )
+#                     )
       )
     ),
  
     # Filter Drug Name
     checkboxInput("includeDrug", "Filter By Drug Name", FALSE),
     conditionalPanel(
+      checkboxInput("twoDrug", "Compare First Two Treatments", FALSE),
       condition = "input.includeDrug == true",
       uiOutput("drug_names"),
       radioButtons("selectAllNoneDrugs", "Quick Check/Uncheck All Drugs: ",

@@ -1,7 +1,7 @@
 require('survival')
 
-#filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
-filepath <- "/home/samfin/ShinyApps/mrlu/"
+filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
+#filepath <- "/home/samfin/ShinyApps/mrlu/"
 
 data <- read.csv(paste(filepath, "clinical_data.csv",sep=""))
 pat.drugs <- read.csv(paste(filepath, "pat_drugs.csv", sep=""))
@@ -91,6 +91,12 @@ shinyServer(function(input, output) {
   
 # Renders UI For Drug Name Filter  
   output$drug_names <- renderUI({
+    plot.data <- selectPatsSansMeds(data, two_class = input$twoClass, two_drug = input$twoDrug)
+    if(input$twoDrug){
+      plot.data <- selectPatsSansMeds(data, two_class = input$twoClass, two_drug = input$twoDrug, debug=T)
+#       print(plot.data[1:2,'MEDICATION'])
+#       print(data2[1:2,'MEDICATION'])
+    }
     if(input$selectAllNoneDrugs == 'none') {
       if(input$twoDrug){
         return(checkboxGroupInput("drug_name", "Include:", sort(unique(data2$MEDICATION))))
@@ -129,19 +135,18 @@ shinyServer(function(input, output) {
     }
   })
   
-#  Function to Narrow Down Dataset According to UI inputs
-  selectPats <- function(data, subgroups = TRUE, two_class = FALSE, two_drug = FALSE){
+  selectPatsSansMeds <- function(data, subgroups = TRUE, two_class = FALSE, two_drug = FALSE, debug=FALSE){
     if(two_class || two_drug){
       plot.data <- data2
     }
     else{
       plot.data <- data
     }
+    
     #EXCLUDE SURVIVORS
     if(input$includeSource){
       plot.data <- subset(plot.data, SOURCE==input$selectSource, drop=T)
-    }
-    
+    } 
     if(input$includeSex & input$groupBy != 'sex') {
       plot.data <- subset(plot.data, SEX==input$sex,drop=T)      
     }
@@ -157,15 +162,72 @@ shinyServer(function(input, output) {
     if(input$includeClasses){
       plot.data <- subset(plot.data, DRUG_CLASS %in% input$drug_class, drop=T)
     }
-    if(input$includeDrug){
-      plot.data <- subset(plot.data, MEDICATION %in% input$drug_name, drop=T)
-    }
     if(input$includeMinGroupSize){
       group.sizes <- table(factor(plot.data[,input$groupBy]))
       big.groups <- names(group.sizes)[which(group.sizes > input$minGroupSize)]
       plot.data <- subset(plot.data, plot.data[,input$groupBy] %in% big.groups)
     }
     plot.data
+  }
+  
+#  Function to Narrow Down Dataset According to UI inputs
+  selectPats2 <- function(data, subgroups = TRUE, two_class = FALSE, two_drug = FALSE, debug=FALSE){
+    plot.data <- selectPatsSansMeds(data, subgroups = TRUE, two_class = FALSE, two_drug = FALSE, debug=FALSE)
+    if(input$includeDrug){
+      plot.data <- subset(plot.data, MEDICATION %in% input$drug_name, drop=T)
+    }
+    if(debug){
+      print("Debug:")
+      print(plot.data[1:2,"MEDICATION"])
+    }
+    plot.data
+    
+  }
+  
+  #  Function to Narrow Down Dataset According to UI inputs
+  selectPats <- function(data, subgroups = TRUE, two_class = FALSE, two_drug = FALSE, debug=FALSE){
+    plot.data <- selectPatsSansMeds(data, subgroups = TRUE, two_class = FALSE, two_drug = FALSE, debug=FALSE)
+    
+    if(two_class || two_drug){
+      plot.data <- data2
+    }
+    else{
+      plot.data <- data
+    }
+    
+    #EXCLUDE SURVIVORS
+    if(input$includeSource){
+      plot.data <- subset(plot.data, SOURCE==input$selectSource, drop=T)
+    } 
+    if(input$includeSex & input$groupBy != 'sex') {
+      plot.data <- subset(plot.data, SEX==input$sex,drop=T)      
+    }
+    if(input$includeAge) {
+      plot.data <- subset(plot.data, AGE >= min(input$age_range) & AGE <= max(input$age_range),drop=T)      
+    }
+    if(input$includeBRAF) {
+      plot.data <- subset(plot.data, BRAF==as.numeric(input$braf),drop=T)      
+    }
+    if(input$includeNRAS) {
+      plot.data <- subset(plot.data, NRAS==as.numeric(input$nras),drop=T)         
+    }
+    if(input$includeClasses){
+      plot.data <- subset(plot.data, DRUG_CLASS %in% input$drug_class, drop=T)
+    }
+    if(input$includeMinGroupSize){
+      group.sizes <- table(factor(plot.data[,input$groupBy]))
+      big.groups <- names(group.sizes)[which(group.sizes > input$minGroupSize)]
+      plot.data <- subset(plot.data, plot.data[,input$groupBy] %in% big.groups)
+    }
+    if(input$includeDrug){
+      plot.data <- subset(plot.data, MEDICATION %in% input$drug_name, drop=T)
+    }
+    if(debug){
+      print("Debug:")
+      print(plot.data[1:2,"MEDICATION"])
+    }
+    plot.data
+    
   }
   
   # Build Cox Model, Including Right-Censoring for those patients alive at end of study
