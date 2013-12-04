@@ -1,7 +1,7 @@
 require('survival')
 
-filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
-#filepath <- "/home/samfin/ShinyApps/mrlu/"
+#filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
+filepath <- "/home/samfin/ShinyApps/mrlu/"
 
 data <- read.csv(paste(filepath, "clinical_data.csv",sep=""))
 pat.drugs <- read.csv(paste(filepath, "pat_drugs.csv", sep=""))
