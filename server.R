@@ -1,7 +1,7 @@
 require('survival')
 
-#filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
-filepath <- "/home/samfin/ShinyApps/mrlu/"
+filepath <- "~/Documents/0 Research/Rubin/0 mrlu/"
+#filepath <- "/home/samfin/ShinyApps/mrlu/"
 
 data <- read.csv(paste(filepath, "clinical_data.csv",sep=""))
 pat.drugs <- read.csv(paste(filepath, "pat_drugs.csv", sep=""))
@@ -290,15 +290,62 @@ shinyServer(function(input, output) {
             xlab="Drug Name")
     },height=900)
   
-  
-  output$boxSummary <- renderPrint({  
+  output$boxSummary <- renderPrint({
     plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
     plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
     plot.data[,input$groupBy] <- factor(plot.data[,input$groupBy])
-    
     tapply(plot.data$DAYS_TO_NEXT_RX, plot.data[,input$groupBy], summary)
   })
+    
+#   output$boxSummary <- renderPrint({  
+#     plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
+#     plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
+#     plot.data[,input$groupBy] <- factor(plot.data[,input$groupBy])
+#     
+#     list(
+#     tapply(plot.data$DAYS_TO_NEXT_RX, plot.data[,input$groupBy], summary),
+#     t2ntPairwiseTT(),
+#     t2ntANOVA()
+#     )
+#   })
   
+  output$t2ntANOVA <- renderPrint({
+    plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
+    plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
+    if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+    }
+    if(input$groupBy == 'SEX') {
+      summary(aov(DAYS_TO_NEXT_RX ~ SEX, plot.data))
+    }
+    else if(input$groupBy == 'BRAF') {
+      summary(aov(DAYS_TO_NEXT_RX ~ BRAF, plot.data))
+    }
+    else if(input$groupBy == 'NRAS') {
+      summary(aov(DAYS_TO_NEXT_RX ~ NRAS, plot.data))
+    }
+    else if(input$groupBy == 'DRUG_CLASS') {
+      summary(aov(DAYS_TO_NEXT_RX ~ DRUG_CLASS, plot.data))
+    }
+    else if(input$groupBy == 'MUTATION') {
+      summary(aov(DAYS_TO_NEXT_RX ~ MUTATION, plot.data))
+    }
+    else {
+      summary(aov(DAYS_TO_NEXT_RX ~ MEDICATION, plot.data))
+    }
+  })
+  
+  output$t2ntPairwiseTT <- renderPrint({
+    plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
+    plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
+    if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+    }
+    pairwise.t.test(plot.data[,"DAYS_TO_NEXT_RX"], plot.data[,input$groupBy])
+  })
+
   # Generates Survival Plot  
   output$survCurv <- renderPlot({
     plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
@@ -321,36 +368,41 @@ shinyServer(function(input, output) {
 
   },height=500)
   
+  output$survCall <- renderPrint({  
+    plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
+    if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+    }
+    coxModel(plot.data, input$groupBy)$call
+  })
+  
   output$survSummary <- renderPrint({  
     plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
     }
-    
-    ml.surv <- coxModel(plot.data, input$groupBy)
-    mfit <- survfit(ml.surv)
-    list(ml.surv, mfit)
+    survfit(coxModel(plot.data, input$groupBy))
   })
   
-#  THIS CODE IS NOT YET TO BE DEPLOYED.  ONLY EXPLORING SURVDIFF FUNCTION.  
-#   output$survDiffSummary <- renderPrint({
-#     plot.data <- selectPats(data)
-#     if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
-#       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
-#       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
-#     }
-# 
-#     diff_output <- switch(input$groupBy,
-#                           MEDICATION = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ MEDICATION, data=plot.data),
-#                           DRUG_CLASS = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ DRUG_CLASS, data=plot.data),
-#                           SEX = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ SEX, data=plot.data),
-#                           BRAF = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ BRAF, data=plot.data),
-#                           MUTATION = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ MUTATION, data=plot.data),
-#                           NRAS = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ NRAS, data=plot.data)
-#     )
-#      diff_output  
-#   })
+  output$survDiffSummary <- renderPrint({
+    plot.data <- selectPats(data)
+    if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+    }
+
+    diff_output <- switch(input$groupBy,
+                          MEDICATION = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ MEDICATION, data=plot.data),
+                          DRUG_CLASS = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ DRUG_CLASS, data=plot.data),
+                          SEX = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ SEX, data=plot.data),
+                          BRAF = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ BRAF, data=plot.data),
+                          MUTATION = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ MUTATION, data=plot.data),
+                          NRAS = survdiff(Surv(DAYS_TO_DEATH, event=(!plot.data$R.CENSORED), type="right") ~ NRAS, data=plot.data)
+    )
+     diff_output
+  })
 
   
   # Displays Age and Sex Distributions of Patients in Cohort

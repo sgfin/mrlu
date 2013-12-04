@@ -121,10 +121,12 @@ shinyUI(pageWithSidebar(
                 ,tabsetPanel(
                   tabPanel("Kaplan Meier",
                            plotOutput("survCurv", height="auto")
+                           ,h5("R Call Used to Construct Model:")
+                           ,verbatimTextOutput("survCall")
                            ,h5("Model Summary")
                            ,verbatimTextOutput("survSummary")
-                           #,h5("Differences Statistics")
-                           #,verbatimTextOutput("survDiffSummary")
+                           ,h5("Difference Statistics")
+                           ,verbatimTextOutput("survDiffSummary")
                            )
                   ,tabPanel("Time to Next Treatment",
                             conditionalPanel(
@@ -136,10 +138,15 @@ shinyUI(pageWithSidebar(
                            ,conditionalPanel(
                              condition = "input.groupBy != 'MEDICATION'",
                              HTML("<center>"),
-                             plotOutput("boxResponse", height="auto",width="60%"),
+                             plotOutput("boxResponse", height="auto",width="80%"),
                              HTML("</center>")
                            )
+                          ,h5("Summary Statistics")
                           ,verbatimTextOutput("boxSummary")
+                          ,h5("Pair-wise T-Test")
+                          ,verbatimTextOutput("t2ntPairwiseTT")
+                          ,h5("ANOVA")
+                          ,verbatimTextOutput("t2ntANOVA")
                            )
                   ,tabPanel("Tumor Response", plotOutput("barResponse", height="auto"))
                 )
