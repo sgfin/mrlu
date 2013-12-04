@@ -148,7 +148,15 @@ shinyUI(pageWithSidebar(
                           ,h5("ANOVA")
                           ,verbatimTextOutput("t2ntANOVA")
                            )
-                  ,tabPanel("Tumor Response", plotOutput("barResponse", height="auto"))
+                  ,tabPanel("Tumor Response",
+                            plotOutput("barResponse", height="auto")
+                            ,h5("Summary Statistics")
+                            ,verbatimTextOutput("tumorBurdenSummary")
+                            ,h5("Pair-wise T-Test")
+                            ,verbatimTextOutput("tumorBurdenPairwiseTT")
+                            ,h5("ANOVA")
+                            ,verbatimTextOutput("tumorBurdenANOVA")
+                            )
                 )
                 ),
        tabPanel("Raw Data (Cohort Specific)",

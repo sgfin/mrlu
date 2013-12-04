@@ -296,18 +296,6 @@ shinyServer(function(input, output) {
     plot.data[,input$groupBy] <- factor(plot.data[,input$groupBy])
     tapply(plot.data$DAYS_TO_NEXT_RX, plot.data[,input$groupBy], summary)
   })
-    
-#   output$boxSummary <- renderPrint({  
-#     plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
-#     plot.data <- plot.data[which(!is.na(plot.data$DAYS_TO_NEXT_RX)),]
-#     plot.data[,input$groupBy] <- factor(plot.data[,input$groupBy])
-#     
-#     list(
-#     tapply(plot.data$DAYS_TO_NEXT_RX, plot.data[,input$groupBy], summary),
-#     t2ntPairwiseTT(),
-#     t2ntANOVA()
-#     )
-#   })
   
   output$t2ntANOVA <- renderPrint({
     plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
@@ -344,6 +332,50 @@ shinyServer(function(input, output) {
       plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
     }
     pairwise.t.test(plot.data[,"DAYS_TO_NEXT_RX"], plot.data[,input$groupBy])
+  })
+  
+  output$tumorBurdenSummary <- renderPrint({
+    plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
+    plot.data <- plot.data[which(!is.na(plot.data$TUMOR_CHANGE)),]
+    plot.data[,input$groupBy] <- factor(plot.data[,input$groupBy])
+    tapply(plot.data$TUMOR_CHANGE, plot.data[,input$groupBy], summary)
+  })
+  
+  output$tumorBurdenANOVA <- renderPrint({
+    plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
+    plot.data <- plot.data[which(!is.na(plot.data$TUMOR_CHANGE)),]
+    if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+    }
+    if(input$groupBy == 'SEX') {
+      summary(aov(TUMOR_CHANGE ~ SEX, plot.data))
+    }
+    else if(input$groupBy == 'BRAF') {
+      summary(aov(TUMOR_CHANGE ~ BRAF, plot.data))
+    }
+    else if(input$groupBy == 'NRAS') {
+      summary(aov(TUMOR_CHANGE ~ NRAS, plot.data))
+    }
+    else if(input$groupBy == 'DRUG_CLASS') {
+      summary(aov(TUMOR_CHANGE ~ DRUG_CLASS, plot.data))
+    }
+    else if(input$groupBy == 'MUTATION') {
+      summary(aov(TUMOR_CHANGE ~ MUTATION, plot.data))
+    }
+    else {
+      summary(aov(TUMOR_CHANGE ~ MEDICATION, plot.data))
+    }
+  })
+  
+  output$tumorBurdenPairwiseTT <- renderPrint({
+    plot.data <- selectPats(data, two_class = input$twoClass, two_drug = input$twoDrug)
+    plot.data <- plot.data[which(!is.na(plot.data$TUMOR_CHANGE)),]
+    if(input$groupBy=='NRAS' || input$groupBy=='BRAF'){
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='0')] <- paste(input$groupBy, " Negative", sep="")
+      plot.data[,input$groupBy][which(plot.data[,input$groupBy]=='1')] <- paste(input$groupBy, " Positive",sep="")
+    }
+    pairwise.t.test(plot.data[,"TUMOR_CHANGE"], plot.data[,input$groupBy])
   })
 
   # Generates Survival Plot  
