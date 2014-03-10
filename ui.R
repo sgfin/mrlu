@@ -15,14 +15,19 @@ shinyUI(pageWithSidebar(
    ,sidebarPanel(
      
     # Group Plot
-    selectInput("groupBy", "Compare Outcomes By:",
+    selectInput("groupBy", "Stratification Variable:",
                 list("Drug Class" = "DRUG_CLASS",
                      "Drug Name" = "MEDICATION",
                      "Mutation Type" = "MUTATION",
                      "BRAF Status" = "BRAF",
                      "NRAS Status" = "NRAS",
                      "Sex" = "SEX"
-                ))    
+                )),
+    # Group Plot
+    selectInput("outcomeVar", "Outcome Variable:",
+                list("Survival" = "SURVIVAL",
+                     "Time to Next Treatment" = "TTNT"
+                ))
     ,br(),br()
     # Minimum Patients
     ,checkboxInput("includeMinGroupSize", "Minimum Patients Per Outcome Group", FALSE),
@@ -117,16 +122,16 @@ shinyUI(pageWithSidebar(
                  ,plotOutput("cohortAgeSex", height="auto")
                  ,plotOutput("cohortGen", height="auto")
                  ,plotOutput("cohortDrugs", height="auto")),
-       tabPanel("Outcomes"
+       tabPanel("Outcomes Analysis"
                 ,tabsetPanel(
                   tabPanel("Kaplan Meier",
                            plotOutput("survCurv", height="auto")
                            ,h5("R Call Used to Construct Model:")
                            ,verbatimTextOutput("survCall")
                            ,h5("Model Summary")
-                           ,verbatimTextOutput("survSummary")
+                           ,tableOutput("survSummary")
                            ,h5("Difference Statistics")
-                           ,verbatimTextOutput("survDiffSummary")
+                           ,tableOutput("survDiffSummary")
                            )
                   ,tabPanel("Time to Next Treatment",
                             conditionalPanel(
@@ -142,20 +147,20 @@ shinyUI(pageWithSidebar(
                              HTML("</center>")
                            )
                           ,h5("Summary Statistics")
-                          ,verbatimTextOutput("boxSummary")
-                          ,h5("Pair-wise T-Test")
-                          ,verbatimTextOutput("t2ntPairwiseTT")
+                          ,tableOutput("boxSummary")
                           ,h5("ANOVA")
                           ,verbatimTextOutput("t2ntANOVA")
-                           )
+                          ,h5("Pair-wise T-Test")
+                          ,tableOutput("t2ntPairwiseTT")
+                  )
                   ,tabPanel("Tumor Response",
                             plotOutput("barResponse", height="auto")
                             ,h5("Summary Statistics")
                             ,verbatimTextOutput("tumorBurdenSummary")
-                            ,h5("Pair-wise T-Test")
-                            ,verbatimTextOutput("tumorBurdenPairwiseTT")
                             ,h5("ANOVA")
                             ,verbatimTextOutput("tumorBurdenANOVA")
+                            ,h5("Pair-wise T-Test")
+                            ,verbatimTextOutput("tumorBurdenPairwiseTT")
                             )
                 )
                 ),
