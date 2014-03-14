@@ -511,10 +511,11 @@ shinyServer(function(input, output) {
     plot.data <- selectPats(data)
     p.sex <- qplot(SEX, data = plot.data, fill = SOURCE, main = "Cohort Sex Distribution") +
       scale_x_discrete(drop = F) + theme(axis.text=element_text(size=16),
-                                         title=element_text(size=16))
+                                         title=element_text(size=12),
+                                         axis.text.x=element_text(angle=90,hjust=1,vjust=0.5, size=16))
     p.age <- qplot(AGE, data = plot.data, fill = SOURCE, main="Cohort Age Distribution") +
       theme(axis.text=element_text(size=16),
-            title=element_text(size=16))
+            title=element_text(size=12))
     multiplot(p.sex, p.age, layout = matrix(c(1,2,2),1,3,byrow=T))
     #print(p.sex)
   }, height = 250)
@@ -529,12 +530,14 @@ shinyServer(function(input, output) {
     p.mut <- qplot(MUTATION, data=plot.data, fill = SOURCE,
                    main="Cohort Positive Mutation Results Distribution") +
       scale_x_discrete(drop = F) + theme(axis.text=element_text(size=16),
-                                         title=element_text(size=16))
+                                         title=element_text(size=12),
+                                         axis.text.x=element_text(angle=90,hjust=1,vjust=0.5, size=16))
     p.drug <- qplot(DRUG_CLASS, data =plot.data, fill = SOURCE,
                     main="Cohort Treatment Drug Class Distribution") +
                     scale_x_discrete(labels = c("CHEMO","IMMUNO","KINASE","ANTIBOD"), drop=F) +
       theme(axis.text=element_text(size=16),
-            title=element_text(size=16))
+            title=element_text(size=12),
+            axis.text.x=element_text(angle=90,hjust=1,vjust=0.5, size=16))
     multiplot(p.mut, p.drug, layout = matrix(c(1,2),1,2,byrow=T))
   }, height = 250)
   
@@ -545,7 +548,7 @@ shinyServer(function(input, output) {
           main="Cohort Drug Distribution", drop=F) +
       theme(axis.text.y= element_text(size=16),
             axis.text.x=element_text(angle=90,hjust=1,vjust=0.5, size=16),
-            title=element_text(size=16)
+            title=element_text(size=12)
             )
     print(p.med)
   }, height = 400)  
@@ -561,7 +564,7 @@ shinyServer(function(input, output) {
                             "DAYS TO DEATH","ALIVE AT END OF STUDY","TUMOR CHANGE",
                             "INSTITUTION")
     plot.data
-  },options=list(iDisplayLength = 25))  
+  },options=list(iDisplayLength = 10))  
   
   # Creates Table of Drug Data for Display/Download
   output$cohortTableDrugsFull <- renderDataTable({
@@ -569,7 +572,7 @@ shinyServer(function(input, output) {
     MRNS <- unique(plot.data$MRN)
     data <- pat.drugs.full[which(pat.drugs.full$MRN %in% MRNS),]
     data
-  },options=list(iDisplayLength = 25))  
+  },options=list(iDisplayLength = 10))  
   
   # Creates Table of Drug Data for Display/Download
   output$cohortTableDrugs <- renderDataTable({
@@ -577,7 +580,7 @@ shinyServer(function(input, output) {
     MRNS <- unique(plot.data$MRN)
     data <- pat.drugs[which(pat.drugs$MRN %in% MRNS),]
     data
-  },options=list(iDisplayLength = 25))
+  },options=list(iDisplayLength = 10))
   
   # Dowload Handler for Clinical Data
   output$downloadDataClinical <- downloadHandler(
