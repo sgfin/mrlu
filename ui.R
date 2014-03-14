@@ -13,28 +13,41 @@ shinyUI(pageWithSidebar(
   
   # Sidebar Panel
    ,sidebarPanel(
-     
+     conditionalPanel(condition="input.conditionedPanels == 'Cohort Summary'",
+                      helpText("Use the filters below to adjust the inclusion criteria for the cohort.
+                               (No filter is required, however.)  As you apply filters, be sure to confirm that the distributions
+                               across the variables both reflect your judgement as well as the characteristics of your patient."),
+                      helpText("When satistified, click on the 'Outcomes Analysis' tab to analyze."),
+                      helpText("Please be sure to only run one analysis at a time.
+                               Rapid and repeated adjustment of filters in search of significant findings may yield false-positive results.")
+     )
+                      
+     ,conditionalPanel(condition="input.conditionedPanels == 'Outcomes Analysis'",
     # Group Plot
-    selectInput("groupBy", "Stratification Variable:",
-                list("Drug Class" = "DRUG_CLASS",
-                     "Drug Name" = "MEDICATION",
-                     "Mutation Type" = "MUTATION",
-                     "BRAF Status" = "BRAF",
-                     "NRAS Status" = "NRAS",
-                     "Sex" = "SEX"
-                )),
-    # Group Plot
-    selectInput("outcomeVar", "Outcome Variable:",
-                list("Survival" = "SURVIVAL",
-                     "Time to Next Treatment" = "TTNT"
-                ))
-    ,br(),br()
-    # Minimum Patients
-    ,checkboxInput("includeMinGroupSize", "Minimum Patients Per Outcome Group", FALSE),
-      conditionalPanel(
-        condition = "input.includeMinGroupSize == true",
-        numericInput("minGroupSize", "Require n >=", 12)
-      )
+                      helpText("Please be sure to only run one analysis at a time.
+                               Rapid and repeated adjustment of filters in search of significant findings may yield false-positive results.")
+                      ,selectInput("groupBy", "Stratification Variable:",
+                                  list("Drug Class" = "DRUG_CLASS",
+                                       "Drug Name" = "MEDICATION",
+                                       "Mutation Type" = "MUTATION",
+                                       "BRAF Status" = "BRAF",
+                                       "NRAS Status" = "NRAS",
+                                       "Sex" = "SEX"
+                                  )),
+      # Group Plot
+                      selectInput("outcomeVar", "Outcome Variable:",
+                                  list("Survival" = "SURVIVAL",
+                                       "Time to Next Treatment" = "TTNT"
+                                  ))
+                      # Minimum Patients
+                      ,checkboxInput("includeMinGroupSize", "Minimum Patients Per Outcome Group", FALSE),
+                      conditionalPanel(
+                        condition = "input.includeMinGroupSize == true",
+                        numericInput("minGroupSize", "Require n >=", 12)
+                      )
+                      ,br()
+     )
+    
     # INSTITUTION
     ,checkboxInput("includeSource", "Filter By Institution of Origin", FALSE),
     conditionalPanel(
@@ -133,27 +146,27 @@ shinyUI(pageWithSidebar(
                            ,h5("Difference Statistics")
                            ,tableOutput("survDiffSummary")
                            )
-                  ,tabPanel("Time to Next Treatment",
-                            conditionalPanel(
-                              condition = "input.groupBy == 'MEDICATION'",
-                              HTML("<center>"),
-                              plotOutput("boxResponseMed", height="auto",width="100%"),
-                              HTML("</center>")
-                              )
-                           ,conditionalPanel(
-                             condition = "input.groupBy != 'MEDICATION'",
-                             HTML("<center>"),
-                             plotOutput("boxResponse", height="auto",width="80%"),
-                             HTML("</center>")
-                           )
-                          ,h5("Summary Statistics")
-                          ,tableOutput("boxSummary")
-                          ,h5("ANOVA")
-                          ,verbatimTextOutput("t2ntANOVA")
-                          ,h5("Pair-wise T-Test")
-                          ,tableOutput("t2ntPairwiseTT")
-                  )
-                  ,tabPanel("Tumor Response",
+#                   ,tabPanel("Time to Next Treatment",
+#                             conditionalPanel(
+#                               condition = "input.groupBy == 'MEDICATION'",
+#                               HTML("<center>"),
+#                               plotOutput("boxResponseMed", height="auto",width="100%"),
+#                               HTML("</center>")
+#                               )
+#                            ,conditionalPanel(
+#                              condition = "input.groupBy != 'MEDICATION'",
+#                              HTML("<center>"),
+#                              plotOutput("boxResponse", height="auto",width="80%"),
+#                              HTML("</center>")
+#                            )
+#                           ,h5("Summary Statistics")
+#                           ,tableOutput("boxSummary")
+#                           ,h5("ANOVA")
+#                           ,verbatimTextOutput("t2ntANOVA")
+#                           ,h5("Pair-wise T-Test")
+#                           ,tableOutput("t2ntPairwiseTT")
+#                   )
+                   ,tabPanel("Tumor Response",
                             plotOutput("barResponse", height="auto")
                             ,h5("Summary Statistics")
                             ,verbatimTextOutput("tumorBurdenSummary")
@@ -193,7 +206,7 @@ shinyUI(pageWithSidebar(
                 )
      )
     )
-     )
+       ,id = "conditionedPanels")
   )
 )
 )
