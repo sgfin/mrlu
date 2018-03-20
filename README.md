@@ -8,6 +8,3 @@ Published as:
 Finlayson SG, Levy M, Reddy S, Rubin DL. Toward rapid learning in cancer treatment selection: An analytical engine for practice-based clinical data. J Biomed Inform. 2016;60:104-13.
 http://www.sciencedirect.com/science/article/pii/S153204641600006X
 
-The system is currently deployed at:
-
-http://mrlu.stanford.edu:3838/mrlu/
